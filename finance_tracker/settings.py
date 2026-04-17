@@ -33,8 +33,7 @@ DEBUG = 'RENDER' not in os.environ
 
 import os
 
-ALLOWED_HOSTS = ["hisabkhata.onrender.com"]
-
+ALLOWED_HOSTS = ["hisabkhata-3as8.onrender.com"]
 
 
 
