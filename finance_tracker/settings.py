@@ -35,9 +35,7 @@ import os
 
 ALLOWED_HOSTS = ["hisabkhata.onrender.com"]
 
-host = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if host:
-    ALLOWED_HOSTS.append(host)
+
 
 
 # Application definition
