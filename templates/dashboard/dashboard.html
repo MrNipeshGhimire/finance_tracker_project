@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-md mx-auto space-y-5 pb-28">
+
+<!-- 👋 HEADER -->
+<div class="flex justify-between items-center">
+    <div>
+        <p class="text-sm text-gray-500">Welcome back, {{user.username}}👋</p>
+        <h2 class="text-lg font-semibold">Your Dashboard</h2>
+    </div>
+</div>
+
+<!-- 💰 SUMMARY -->
+<div class="grid grid-cols-3 gap-3">
+
+    <div class="bg-green-500 text-white p-4 rounded-2xl shadow">
+        <p class="text-xs opacity-80">Income</p>
+        <p class="font-bold text-lg">Rs. {{ total_income }}</p>
+    </div>
+
+    <div class="bg-red-500 text-white p-4 rounded-2xl shadow">
+        <p class="text-xs opacity-80">Expense</p>
+        <p class="font-bold text-lg">Rs. {{ total_expense }}</p>
+    </div>
+
+    <div class="bg-gray-800 text-white p-4 rounded-2xl shadow">
+        <p class="text-xs opacity-80">Balance</p>
+        <p class="font-bold text-lg">Rs. {{ balance }}</p>
+    </div>
+
+</div>
+
+<!-- 📊 BAR CHART -->
+<div class="bg-white p-4 rounded-2xl shadow-sm">
+    <p class="text-sm font-medium mb-2">Monthly Overview</p>
+    <canvas id="barChart"></canvas>
+</div>
+
+<!-- 🍩 PIE CHART -->
+<div class="bg-white p-4 rounded-2xl shadow-sm">
+    <p class="text-sm font-medium mb-2">Expense Breakdown</p>
+    <canvas id="pieChart"></canvas>
+</div>
+
+<!-- 💡 INSIGHTS -->
+<div class="bg-white p-4 rounded-2xl shadow-sm space-y-2">
+    <p class="text-sm font-medium">Insights</p>
+
+    <p class="text-xs text-gray-500">
+        💰 You earned Rs. {{ total_income }} this period
+    </p>
+
+    <p class="text-xs text-gray-500">
+        💸 You spent Rs. {{ total_expense }}
+    </p>
+
+    <p class="text-xs text-gray-500">
+        📊 Balance: Rs. {{ balance }}
+    </p>
+</div>
+
+<!-- 🧾 RECENT TRANSACTIONS -->
+<div class="bg-white p-4 rounded-2xl shadow-sm">
+    <div class="flex justify-between items-center mb-2">
+        <p class="text-sm font-medium">Recent Transactions</p>
+        <a href="{% url 'transactions:list' %}" class="text-xs text-green-500">
+            View All
+        </a>
+    </div>
+
+    {% for t in recent_transactions %}
+    <div class="flex justify-between py-2 border-b last:border-none">
+
+        <div>
+            <p class="text-sm font-medium">
+                {{ t.category.icon|default:"📁" }} {{ t.category.name }}
+            </p>
+            <p class="text-xs text-gray-500">{{ t.date }}</p>
+        </div>
+
+        <p class="text-sm font-semibold
+            {% if t.type == 'income' %}
+                text-green-500
+            {% else %}
+                text-red-500
+            {% endif %}">
+            Rs. {{ t.amount }}
+        </p>
+
+    </div>
+    {% empty %}
+    <p class="text-xs text-gray-400">No recent transactions</p>
+    {% endfor %}
+</div>
+
+</div>
+
+<!-- 📊 Chart JS -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const months = {{ months|safe }};
+const incomeData = {{ income_data|safe }};
+const expenseData = {{ expense_data|safe }};
+
+// BAR
+new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: months,
+        datasets: [
+            {
+                label: 'Income',
+                data: incomeData,
+                backgroundColor: '#22c55e'
+            },
+            {
+                label: 'Expense',
+                data: expenseData,
+                backgroundColor: '#ef4444'
+            }
+        ]
+    }
+});
+
+// PIE
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ categories|safe }},
+        datasets: [{
+            data: {{ category_totals|safe }}
+        }]
+    }
+});
+
+</script>
+
+{% endblock %}

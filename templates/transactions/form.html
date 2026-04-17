@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="max-w-md mx-auto space-y-4 pb-24">
+
+<!-- 💬 Messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="p-3 rounded-xl text-white
+            {% if message.tags == 'success' %}bg-green-500
+            {% else %}bg-red-500{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- 📄 Form -->
+<form method="POST" class="space-y-4">
+    {% csrf_token %}
+
+    <!-- 🔘 Type Toggle -->
+    <div class="flex bg-gray-100 rounded-xl p-1">
+        <button type="button" onclick="selectType('income')"
+            id="incomeBtn"
+            class="w-1/2 py-2 rounded-xl text-center">
+            Income
+        </button>
+
+        <button type="button" onclick="selectType('expense')"
+            id="expenseBtn"
+            class="w-1/2 py-2 rounded-xl text-center">
+            Expense
+        </button>
+    </div>
+
+    <input type="hidden" name="type" id="typeInput">
+
+    <!-- 💰 Amount -->
+    <div>
+        <input type="number" name="amount" step="0.01"
+               placeholder="Enter amount"
+               class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500">
+
+        {% if form.amount.errors %}
+            <p class="text-red-500 text-xs">{{ form.amount.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <!-- 🧩 Category Cards -->
+    <div>
+        <p class="text-sm text-gray-500 mb-2">Select Category</p>
+
+        <div id="categoryContainer" class="grid grid-cols-3 gap-2">
+            {% for c in form.category.field.queryset %}
+            <div onclick="selectCategory({{ c.id }})"
+                 class="category-card p-2 text-center border rounded-xl cursor-pointer"
+                 data-type="{{ c.type }}"
+                 id="cat-{{ c.id }}">
+                
+                <div class="text-lg">
+                    {% if c.icon %}{{ c.icon }}{% else %}📁{% endif %}
+                </div>
+
+                <p class="text-xs">{{ c.name }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <input type="hidden" name="category" id="categoryInput">
+
+        {% if form.category.errors %}
+            <p class="text-red-500 text-xs">{{ form.category.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <!-- ➕ Add Category -->
+    <button type="button" onclick="openModal()"
+            class="w-full border-dashed border-2 p-2 rounded-xl text-gray-500">
+        + Add Category
+    </button>
+
+    <!-- 📅 Date -->
+    <div>
+        <input type="date" name="date"
+       value="{{ form.date.value|default_if_none:'' }}"
+       class="w-full p-3 border rounded-xl">
+
+        {% if form.date.errors %}
+            <p class="text-red-500 text-xs">{{ form.date.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <!-- 📝 Description -->
+    <div>
+        <textarea name="description"
+                  placeholder="Add description..."
+                  class="w-full p-3 border rounded-xl"></textarea>
+    </div>
+
+    <!-- 👨‍👩‍👧 Share -->
+    <div class="flex items-center justify-between">
+        <p class="text-sm">Share with family</p>
+        <input type="checkbox" name="is_shared" checked>
+    </div>
+
+    <!-- 🚀 Submit -->
+    <button class="w-full bg-green-500 text-white p-3 rounded-xl font-semibold">
+        Save Transaction
+    </button>
+
+</form>
+
+</div>
+
+<!-- 🧩 Category Modal -->
+
+<div id="categoryModal"
+     class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center z-50">
+<div class="bg-white w-80 p-4 rounded-2xl space-y-3">
+
+    <h2 class="font-semibold">Add Category</h2>
+
+    <input type="text" id="catName"
+           placeholder="Category name"
+           class="w-full p-2 border rounded-xl">
+
+    <select id="catType" class="w-full p-2 border rounded-xl">
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+    </select>
+
+    <div class="flex gap-2">
+        <button onclick="closeModal()"
+                class="w-1/2 bg-gray-200 p-2 rounded-xl">
+            Cancel
+        </button>
+
+        <button onclick="createCategory()"
+                class="w-1/2 bg-green-500 text-white p-2 rounded-xl">
+            Save
+        </button>
+    </div>
+
+    <p id="catError" class="text-red-500 text-xs"></p>
+
+</div>
+
+</div>
+
+<!-- ⚡ JS -->
+
+<script>
+
+let selectedType = '';
+let selectedCategory = null;
+
+// 🔘 Select Type
+function selectType(type) {
+    selectedType = type;
+    document.getElementById('typeInput').value = type;
+
+    document.getElementById('incomeBtn').classList.remove('bg-green-500','text-white');
+    document.getElementById('expenseBtn').classList.remove('bg-red-500','text-white');
+
+    if (type === 'income') {
+        document.getElementById('incomeBtn').classList.add('bg-green-500','text-white');
+    } else {
+        document.getElementById('expenseBtn').classList.add('bg-red-500','text-white');
+    }
+
+    // Filter categories
+    document.querySelectorAll('.category-card').forEach(card => {
+        if (card.dataset.type === type) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 🧩 Select Category
+function selectCategory(id) {
+    selectedCategory = id;
+    document.getElementById('categoryInput').value = id;
+
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('border-green-500','bg-green-50');
+    });
+
+    document.getElementById('cat-' + id)
+        .classList.add('border-green-500','bg-green-50');
+}
+
+function openModal() {
+    const modal = document.getElementById('categoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');  // 🔥 important
+}
+
+function closeModal() {
+    const modal = document.getElementById('categoryModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex'); // 🔥 important
+}
+
+// 🚀 AJAX Create Category
+function createCategory() {
+    const name = document.getElementById('catName').value;
+    const type = document.getElementById('catType').value;
+    const errorBox = document.getElementById('catError');
+
+    if (!name) {
+        errorBox.innerText = "Name required";
+        return;
+    }
+
+    fetch("{% url 'transactions:category_create_ajax' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `name=${name}&type=${type}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            errorBox.innerText = data.error;
+            return;
+        }
+
+        const container = document.getElementById('categoryContainer');
+
+        const div = document.createElement('div');
+        div.className = "category-card p-2 text-center border rounded-xl cursor-pointer";
+        div.dataset.type = data.type;
+        div.id = "cat-" + data.id;
+
+        div.innerHTML = `
+            <div class="text-lg">${data.icon}</div>
+            <p class="text-xs">${data.name}</p>
+        `;
+
+        div.onclick = () => selectCategory(data.id);
+
+        container.appendChild(div);
+
+        document.getElementById('catName').value = '';
+        errorBox.innerText = '';
+
+        closeModal();
+    });
+}
+
+// 🔥 Default load
+window.onload = function() {
+    selectType('expense');
+};
+
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dateInput = document.querySelector('input[name="date"]');
+
+    if (!dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+});
+</script>
+{% endblock %}

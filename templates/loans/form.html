@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="space-y-5 pb-24">
+
+
+<!-- 🔝 Header -->
+<div class="flex items-center justify-between">
+    <a href="{% url 'loans:list' %}">←</a>
+
+    <h2 class="text-lg font-semibold">
+        {% if loan %}Edit Loan{% else %}Add Loan{% endif %}
+    </h2>
+
+    <div></div>
+</div>
+
+<!-- 🔄 Loan Type -->
+<div class="flex bg-gray-100 rounded-xl p-1">
+    <button id="lendBtn"
+        class="w-1/2 py-2 rounded-xl text-sm font-medium">
+        💸 Lend
+    </button>
+
+    <button id="borrowBtn"
+        class="w-1/2 py-2 rounded-xl text-sm font-medium">
+        💰 Borrow
+    </button>
+</div>
+
+<!-- 👤 Person -->
+<input type="text" id="person"
+    value="{{ loan.person_name|default:'' }}"
+    placeholder="Person Name"
+    class="w-full p-3 border rounded-xl">
+
+<!-- 💵 Amount -->
+<input type="number" id="amount"
+    value="{{ loan.principal_amount|default:'' }}"
+    placeholder="Amount"
+    class="w-full p-3 border rounded-xl">
+
+<!-- 📅 Dates -->
+<div class="grid grid-cols-2 gap-3">
+    <input type="date" id="startDate"
+        value="{{ loan.start_date|date:'Y-m-d' }}"
+        class="w-full p-3 border rounded-xl">
+
+    <input type="date" id="dueDate"
+        value="{{ loan.due_date|date:'Y-m-d' }}"
+        class="w-full p-3 border rounded-xl">
+</div>
+
+<!-- 💡 No Interest -->
+<label class="flex items-center gap-2 text-sm">
+    <input type="checkbox" id="noInterest">
+    No Interest
+</label>
+
+<!-- 📈 Interest Fields -->
+<div id="interestFields" class="space-y-3">
+    <input type="number" id="interestRate"
+        value="{{ loan.interest_rate|default:0 }}"
+        placeholder="Interest %"
+        class="w-full p-3 border rounded-xl">
+
+    <select id="interestType"
+        class="w-full p-3 border rounded-xl">
+        <option value="simple"
+            {% if loan.interest_type == 'simple' %}selected{% endif %}>
+            Simple Interest
+        </option>
+        <option value="compound"
+            {% if loan.interest_type == 'compound' %}selected{% endif %}>
+            Compound Interest
+        </option>
+    </select>
+</div>
+
+<!-- ✅ Submit -->
+<button onclick="submitLoan()"
+    class="w-full bg-green-500 text-white py-3 rounded-xl font-medium shadow">
+    {% if loan %}Update Loan{% else %}Save Loan{% endif %}
+</button>
+
+
+</div>
+
+<!-- 🔥 Hidden Form -->
+
+<form id="loanForm" method="POST"
+    action="{% if loan %}{% url 'loans:edit' loan.id %}{% else %}{% url 'loans:create' %}{% endif %}">
+
+{% csrf_token %}
+<input type="hidden" name="loan_type" id="loanTypeInput">
+<input type="hidden" name="person_name" id="personInput">
+<input type="hidden" name="principal_amount" id="amountInput">
+<input type="hidden" name="start_date" id="startInput">
+<input type="hidden" name="due_date" id="dueInput">
+<input type="hidden" name="interest_rate" id="rateInput">
+<input type="hidden" name="interest_type" id="typeInput">
+
+
+</form>
+
+<!-- ⚡ JS -->
+
+<script>
+
+let loanType = "lend";
+
+// Preload loan type (edit mode)
+{% if loan %}
+    loanType = "{{ loan.loan_type }}";
+{% endif %}
+
+function updateTypeUI() {
+    document.getElementById("lendBtn").classList.toggle("bg-green-500", loanType==="lend");
+    document.getElementById("lendBtn").classList.toggle("text-white", loanType==="lend");
+
+    document.getElementById("borrowBtn").classList.toggle("bg-red-500", loanType==="borrow");
+    document.getElementById("borrowBtn").classList.toggle("text-white", loanType==="borrow");
+}
+
+document.getElementById("lendBtn").onclick = () => {
+    loanType = "lend";
+    updateTypeUI();
+};
+
+document.getElementById("borrowBtn").onclick = () => {
+    loanType = "borrow";
+    updateTypeUI();
+};
+
+updateTypeUI();
+
+// 📅 Default date (only for create)
+document.addEventListener("DOMContentLoaded", function () {
+    {% if not loan %}
+        document.getElementById("startDate").valueAsDate = new Date();
+    {% endif %}
+
+    // Handle No Interest on edit
+    {% if loan and loan.interest_rate == 0 %}
+        document.getElementById("noInterest").checked = true;
+        document.getElementById("interestFields").style.display = "none";
+    {% endif %}
+});
+
+// Toggle interest
+document.getElementById("noInterest").addEventListener("change", function () {
+    const fields = document.getElementById("interestFields");
+
+    if (this.checked) {
+        fields.style.display = "none";
+        document.getElementById("interestRate").value = 0;
+    } else {
+        fields.style.display = "block";
+    }
+});
+
+// Submit
+function submitLoan() {
+
+    const person = document.getElementById("person").value;
+    const amount = document.getElementById("amount").value;
+    const start = document.getElementById("startDate").value;
+
+    if (!person || !amount || !start) {
+        alert("Please fill required fields");
+        return;
+    }
+
+    document.getElementById("loanTypeInput").value = loanType;
+    document.getElementById("personInput").value = person;
+    document.getElementById("amountInput").value = amount;
+    document.getElementById("startInput").value = start;
+    document.getElementById("dueInput").value = document.getElementById("dueDate").value;
+    document.getElementById("rateInput").value = document.getElementById("interestRate").value || 0;
+    document.getElementById("typeInput").value = document.getElementById("interestType").value;
+
+    document.getElementById("loanForm").submit();
+}
+
+</script>
+
+{% endblock %}

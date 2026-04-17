@@ -1,0 +1,173 @@
+{% load static %}
+{% comment %} {% if messages %}
+
+<div class="space-y-2 mb-3">
+    {% for message in messages %}
+        <div class="p-3 rounded-xl text-sm
+            {% if message.tags == 'success' %}
+                bg-green-100 text-green-700
+            {% elif message.tags == 'error' %}
+                bg-red-100 text-red-600
+            {% endif %}
+        ">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %} {% endcomment %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}App{% endblock %}</title>
+    {% load static %}
+    <link  href ="{% static 'src/styles.css' %}" rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<style>
+#pageLoader {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#pageLoader:not(.hidden) {
+    opacity: 1;
+}
+</style>
+
+<body class="bg-gray-100">
+
+    <!-- 📱 Mobile Container -->
+    <div class="max-w-sm mx-auto bg-white min-h-screen shadow-lg relative">
+
+        <!-- 🔝 Header -->
+        <header class="p-4 border-b flex justify-between items-center">
+            <h1 class="text-lg font-semibold">
+                {% block header %}
+                    Dashboard
+                {% endblock %}
+            </h1>
+        </header>
+
+        <!-- 📄 Main Content -->
+        <main class="p-4 pb-20">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <!-- 🔻 Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-sm mx-auto bg-white border-t flex justify-around py-2">
+
+            <a href="{% url 'dashboard' %}" class="flex flex-col items-center text-xs">
+                <i data-lucide="home"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="{% url 'transactions:list' %}" class="flex flex-col items-center text-xs">
+                <i data-lucide="arrow-left-right"></i>
+                <span>Transactions</span>
+            </a>
+
+            <a href="{% url 'loans:list' %}" class="flex flex-col items-center text-xs">
+                <i data-lucide="hand-coins"></i>
+                <span>Loans</span>
+            </a>
+
+            <a href="{% url 'budgets:list' %}" class="flex flex-col items-center text-xs">
+                <i data-lucide="wallet"></i>
+                <span>Budget</span>
+            </a>
+
+        </nav>
+
+    </div>
+
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    {% comment %} for error message {% endcomment %}
+
+    {% if messages %}
+
+<div id="messageModal"
+     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+
+
+<div class="bg-white w-80 rounded-2xl p-5 text-center space-y-3 animate-fadeIn">
+
+    {% for message in messages %}
+
+        {% if message.tags == 'success' %}
+            <div class="text-green-500 text-3xl">✔️</div>
+        {% else %}
+            <div class="text-red-500 text-3xl">⚠️</div>
+        {% endif %}
+
+        <p class="text-sm font-medium">
+            {{ message }}
+        </p>
+
+    {% endfor %}
+
+    <button onclick="closeMessageModal()"
+        class="w-full bg-green-500 text-white py-2 rounded-xl">
+        OK
+    </button>
+
+</div>
+<!-- 🔔 TOAST CONTAINER -->
+<div id="toastContainer"
+     class="fixed top-4 right-4 space-y-2 z-50">
+</div>
+</div>
+{% endif %}
+
+
+<!-- 🔄 TRANSPARENT LOADER -->
+<div id="pageLoader"
+     class="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-[9999] hidden">
+
+    <div class="bg-white/80 px-6 py-4 rounded-2xl shadow-xl text-center">
+        <div class="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p class="text-sm text-gray-600 mt-2">Loading...</p>
+    </div>
+
+</div>
+</body>
+
+<script>
+function closeMessageModal() {
+    document.getElementById("messageModal").style.display = "none";
+}
+
+// Auto close after 3 sec
+setTimeout(() => {
+    const modal = document.getElementById("messageModal");
+    if (modal) modal.style.display = "none";
+}, 3000);
+</script>
+
+<script>
+
+document.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", function() {
+        if (this.getAttribute("href").startsWith("#")) return;
+        document.getElementById("pageLoader").classList.remove("hidden");
+    });
+});
+
+document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", function() {
+        document.getElementById("pageLoader").classList.remove("hidden");
+    });
+});
+
+</script>
+</html>

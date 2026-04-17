@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block header %}Analytics{% endblock %}
+
+{% block content %}
+
+<div class="bg-white p-4 rounded-xl shadow-sm">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('myChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ months|safe }},
+        datasets: [
+            {
+                label: 'Income',
+                data: {{ income_data|safe }},
+                backgroundColor: 'green'
+            },
+            {
+                label: 'Expense',
+                data: {{ expense_data|safe }},
+                backgroundColor: 'red'
+            }
+        ]
+    }
+});
+</script>
+
+{% endblock %}

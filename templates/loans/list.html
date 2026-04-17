@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="space-y-4 pb-28">
+
+<!-- 🔍 Search + Filter -->
+
+<div class="flex gap-2">
+
+<form method="GET" class="flex gap-2 w-full">
+    <input type="text" name="search"
+           value="{{ search_query|default_if_none:'' }}"
+           placeholder="Search loans..."
+           class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500">
+
+    <button class="bg-green-500 text-white px-4 rounded-xl">
+        🔍
+    </button>
+</form>
+
+<!-- ⚙️ Filter Button -->
+<button onclick="toggleFilter()"
+    class="bg-gray-100 px-3 rounded-xl text-lg">
+    ⚙️
+</button>
+
+</div>
+
+<!-- ⚙️ Filter Panel -->
+
+<div id="filterPanel" class="hidden bg-white p-4 rounded-xl shadow space-y-4">
+
+<!-- 📊 Status -->
+<div>
+    <p class="text-sm font-medium mb-2">Status</p>
+
+    <div class="flex flex-wrap gap-2">
+        {% for s in status_options %}
+        <a href="?status={{ s }}&search={{ search_query|default_if_none:'' }}&date={{ date_filter|default_if_none:'' }}&from_date={{ request.GET.from_date|default_if_none:'' }}&to_date={{ request.GET.to_date|default_if_none:'' }}"
+           class="px-3 py-1 rounded-full text-xs
+           {% if status_filter == s %}
+               bg-green-500 text-white
+           {% else %}
+               bg-gray-100
+           {% endif %}">
+            {{ s|title }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 📅 Quick Date Filters -->
+<div>
+    <p class="text-sm font-medium mb-2">Quick Filter</p>
+    <div class="flex flex-wrap gap-2 text-xs">
+
+        <a href="?date=today&status={{ status_filter|default_if_none:'' }}&search={{ search_query|default_if_none:'' }}&from_date={{ request.GET.from_date|default_if_none:'' }}&to_date={{ request.GET.to_date|default_if_none:'' }}"
+        class="px-3 py-1 rounded-full bg-gray-100">
+            Today
+        </a>
+
+        <a href="?date=week&status={{ status_filter|default_if_none:'' }}&search={{ search_query|default_if_none:'' }}&from_date={{ request.GET.from_date|default_if_none:'' }}&to_date={{ request.GET.to_date|default_if_none:'' }}"
+        class="px-3 py-1 rounded-full bg-gray-100">
+            Week
+        </a>
+
+        <a href="?date=month&status={{ status_filter|default_if_none:'' }}&search={{ search_query|default_if_none:'' }}&from_date={{ request.GET.from_date|default_if_none:'' }}&to_date={{ request.GET.to_date|default_if_none:'' }}"
+        class="px-3 py-1 rounded-full bg-gray-100">
+            Month
+        </a>
+
+        <a href="?date=year&status={{ status_filter|default_if_none:'' }}&search={{ search_query|default_if_none:'' }}&from_date={{ request.GET.from_date|default_if_none:'' }}&to_date={{ request.GET.to_date|default_if_none:'' }}"
+        class="px-3 py-1 rounded-full bg-gray-100">
+            Year
+        </a>
+    </div>
+</div>
+
+<!-- 📆 Custom Date Range -->
+<form method="GET" class="space-y-2">
+
+    <input type="hidden" name="search" value="{{ search_query|default_if_none:'' }}">
+    <input type="hidden" name="status" value="{{ status_filter|default_if_none:'' }}">
+
+    <div class="flex gap-2">
+        <input type="date" name="from_date"
+               class="w-1/2 p-2 border rounded-lg">
+
+        <input type="date" name="to_date"
+               class="w-1/2 p-2 border rounded-lg">
+    </div>
+
+    <button class="w-full bg-green-500 text-white py-2 rounded-lg text-sm">
+        Apply Filter
+    </button>
+
+</form>
+
+</div>
+
+<!-- 🔴 Overdue Section -->
+
+{% if overdue_loans %}
+
+<div>
+    <h3 class="text-sm font-semibold text-red-500 mb-2">🔴 Overdue</h3>
+
+ <div class="space-y-2">
+    {% for loan in overdue_loans %}
+    <a href="{% url 'loans:detail' loan.id %}"
+       class="block p-4 rounded-xl shadow-sm bg-red-50 border border-red-200">
+
+        <div class="flex justify-between">
+            <div>
+                <p class="font-medium">{{ loan.person_name }}</p>
+                <p class="text-xs text-gray-500">{{ loan.start_date }}</p>
+            </div>
+
+            <div class="text-right">
+                <p class="text-red-500">Rs. {{ loan.remaining_amount }}</p>
+                <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">
+                    Overdue
+                </span>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="mt-2">
+            <div class="w-full bg-gray-200 h-2 rounded-full">
+                <div class="h-2 rounded-full bg-red-500"
+                     style="width: {{ loan.progress_percentage }}%;">
+                </div>
+            </div>
+        </div>
+
+    </a>
+    {% endfor %}
+</div>
+
+</div>
+{% endif %}
+
+<!-- 🟢 Active Section -->
+
+{% if active_loans %}
+
+<div>
+    <h3 class="text-sm font-semibold text-green-600 mb-2">🟢 Active</h3>
+
+<div class="space-y-2">
+    {% for loan in active_loans %}
+    <a href="{% url 'loans:detail' loan.id %}"
+       class="block p-4 rounded-xl shadow-sm bg-white border border-green-200">
+
+        <div class="flex justify-between">
+            <div>
+                <p class="font-medium">{{ loan.person_name }}</p>
+                <p class="text-xs text-gray-500">{{ loan.start_date }}</p>
+            </div>
+
+            <div class="text-right">
+                <p class="{% if loan.loan_type == 'lend' %}text-green-500{% else %}text-red-500{% endif %}">
+                    Rs. {{ loan.remaining_amount }}
+                </p>
+
+                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                    {{ loan.status }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="mt-2">
+            <div class="w-full bg-gray-200 h-2 rounded-full">
+                <div class="h-2 rounded-full bg-green-500"
+                     style="width: {{ loan.progress_percentage }}%;">
+                </div>
+            </div>
+        </div>
+
+    </a>
+    {% endfor %}
+</div>
+
+
+</div>
+{% endif %}
+
+<!-- ⚪ Settled Section -->
+
+{% if settled_loans %}
+
+<div>
+    <h3 class="text-sm font-semibold text-gray-500 mb-2">⚪ Settled</h3>
+
+<div class="space-y-2">
+    {% for loan in settled_loans %}
+    <a href="{% url 'loans:detail' loan.id %}"
+       class="block p-4 rounded-xl shadow-sm bg-gray-50">
+
+        <div class="flex justify-between">
+            <div>
+                <p class="font-medium">{{ loan.person_name }}</p>
+                <p class="text-xs text-gray-500">{{ loan.start_date }}</p>
+            </div>
+
+            <div class="text-right">
+                <p class="text-gray-500">Rs. {{ loan.remaining_amount }}</p>
+                <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
+                    Settled
+                </span>
+            </div>
+        </div>
+
+    </a>
+    {% endfor %}
+</div>
+
+</div>
+{% endif %}
+
+<!-- ➕ Floating Add Button -->
+
+<a href="{% url 'loans:create' %}"
+class="fixed bottom-20 right-5 bg-green-500 text-white w-14 h-14 flex items-center justify-center rounded-full shadow-lg text-2xl z-50">
++ </a>
+
+</div>
+
+<!-- ⚡ JS -->
+
+<script>
+function toggleFilter() {
+    document.getElementById("filterPanel").classList.toggle("hidden");
+}
+</script>
+
+{% endblock %}

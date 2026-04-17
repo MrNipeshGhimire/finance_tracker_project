@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col justify-center min-h-[80vh]">
+
+    <!-- Title -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl font-bold text-green-600">Create Account</h1>
+        <p class="text-sm text-gray-500">Start tracking your finances</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+        {% csrf_token %}
+
+        <!-- Global Errors -->
+        {% if form.non_field_errors %}
+            <div class="bg-red-100 text-red-600 p-3 rounded-xl text-sm">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <!-- Username -->
+        <div>
+            <label class="text-sm font-medium">Username</label>
+            <input type="text" name="username"
+                   value="{{ form.username.value|default:'' }}"
+                   class="w-full mt-1 p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none">
+
+            {% if form.username.errors %}
+                <p class="text-red-500 text-xs mt-1">
+                    {{ form.username.errors.0 }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Email -->
+        <div>
+            <label class="text-sm font-medium">Email</label>
+            <input type="email" name="email"
+                   value="{{ form.email.value|default:'' }}"
+                   class="w-full mt-1 p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none">
+
+            {% if form.email.errors %}
+                <p class="text-red-500 text-xs mt-1">
+                    {{ form.email.errors.0 }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Password -->
+        <div>
+            <label class="text-sm font-medium">Password</label>
+            <input type="password" name="password"
+                   class="w-full mt-1 p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none">
+
+            {% if form.password.errors %}
+                <p class="text-red-500 text-xs mt-1">
+                    {{ form.password.errors.0 }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+            <label class="text-sm font-medium">Confirm Password</label>
+            <input type="password" name="confirm_password"
+                   class="w-full mt-1 p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none">
+
+            {% if form.confirm_password.errors %}
+                <p class="text-red-500 text-xs mt-1">
+                    {{ form.confirm_password.errors.0 }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+                class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold">
+            Register
+        </button>
+
+    </form>
+
+    <!-- Link -->
+    <p class="text-center text-sm mt-4">
+        Already have an account?
+        <a href="{% url 'login' %}" class="text-green-600 font-medium">Login</a>
+    </p>
+
+</div>
+
+{% endblock %}

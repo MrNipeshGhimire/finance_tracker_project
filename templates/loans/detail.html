@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="space-y-4 pb-24">
+
+<!-- 🔝 Header -->
+<div class="flex justify-between items-center">
+    <a href="{% url 'loans:list' %}">←</a>
+    <h2 class="text-lg font-semibold">{{ loan.person_name }}</h2>
+    <a href="{% url 'loans:edit' loan.id %}" class="text-green-600 text-sm">Edit</a>
+</div>
+
+<!-- 🔴 Overdue Alert -->
+{% if loan.is_overdue %}
+<div class="bg-red-100 text-red-600 p-3 rounded-xl text-sm font-medium">
+    ⚠️ This loan is overdue
+    {% if loan.overdue_days %}
+        • {{ loan.overdue_days }} days
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- 💳 Loan Info -->
+<div class="bg-white p-4 rounded-xl shadow-sm space-y-2">
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Type</span>
+        <span class="{% if loan.loan_type == 'lend' %}text-green-600{% else %}text-red-500{% endif %}">
+            {{ loan.loan_type|title }}
+        </span>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Principal</span>
+        <span>Rs. {{ loan.principal_amount }}</span>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Start Date</span>
+        <span>{{ loan.start_date }}</span>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Due Date</span>
+        <span>{{ loan.due_date|default:"-" }}</span>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Status</span>
+        <span class="px-2 py-1 rounded-full text-xs
+
+            {% if loan.is_overdue %}
+                bg-red-100 text-red-600
+            {% elif loan.computed_status == 'settled' %}
+                bg-green-100 text-green-600
+            {% elif loan.computed_status == 'partial' %}
+                bg-yellow-100 text-yellow-600
+            {% else %}
+                bg-gray-100 text-gray-600
+            {% endif %}
+        ">
+            {% if loan.is_overdue %}
+                Overdue
+            {% else %}
+                {{ loan.computed_status }}
+            {% endif %}
+        </span>
+    </div>
+
+</div>
+
+<!-- 💰 Financial Summary -->
+<div class="bg-gray-50 p-4 rounded-xl space-y-3">
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Total Payable</span>
+        <span class="font-semibold text-lg">
+            Rs. {{ loan.payable_amount }}
+        </span>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Interest (Live)</span>
+        <span class="text-yellow-600">
+            Rs. {{ loan.total_interest }}
+        </span>
+    </div>
+
+    <div class="flex justify-between text-xs text-gray-500">
+        <span>Daily Growth</span>
+        <span>+ Rs. {{ loan.daily_interest }}/day</span>
+    </div>
+
+    <hr>
+
+    <div class="flex justify-between">
+        <span class="text-gray-500">Paid</span>
+        <span class="text-green-600">
+            Rs. {{ loan.total_repaid }}
+        </span>
+    </div>
+
+    <div class="flex justify-between font-semibold">
+        <span>Remaining</span>
+        <span class="text-red-500 text-lg">
+            Rs. {{ loan.remaining_amount }}
+        </span>
+    </div>
+
+    <!-- 📊 Progress Bar -->
+    <div>
+        <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden mt-2">
+            <div class="h-3 rounded-full transition-all duration-500
+
+                {% if loan.is_overdue %}
+                    bg-red-500
+                {% elif loan.loan_type == 'lend' %}
+                    bg-green-500
+                {% else %}
+                    bg-blue-500
+                {% endif %}
+            "
+            style="width: {{ loan.progress_percentage }}%;">
+            </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-1 text-right">
+            {{ loan.progress_percentage }}% repaid
+        </p>
+    </div>
+
+</div>
+
+<!-- 🔘 Actions -->
+<div class="flex gap-2">
+    <button onclick="openRepaymentModal()"
+        class="w-1/2 bg-green-500 text-white py-3 rounded-xl">
+        + Repayment
+    </button>
+
+    <button onclick="openDeleteModal()"
+        class="w-1/2 bg-red-500 text-white py-3 rounded-xl">
+        Delete
+    </button>
+</div>
+
+<!-- 📄 Repayments -->
+<div class="space-y-2">
+    <h3 class="text-sm font-medium">Repayments</h3>
+
+    {% for r in loan.repayments.all %}
+    <div class="bg-white p-3 rounded-xl shadow-sm flex justify-between">
+        <div>
+            <p class="font-medium">Rs. {{ r.amount }}</p>
+            <p class="text-xs text-gray-500">{{ r.paid_date }}</p>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-500 text-sm">No repayments yet</p>
+    {% endfor %}
+</div>
+
+</div>
+
+<!-- 💵 Repayment Modal -->
+
+<div id="repaymentModal"
+     class="fixed inset-0 bg-black bg-opacity-40 hidden items-end justify-center z-50">
+
+<div class="bg-white w-full max-w-sm rounded-t-2xl p-5 space-y-3">
+
+    <h3 class="font-semibold">Add Repayment</h3>
+
+    <input type="number" id="repayAmount"
+        placeholder="Amount"
+        class="w-full p-3 border rounded-xl">
+
+    <input type="date" id="repayDate"
+        class="w-full p-3 border rounded-xl">
+
+    <div class="flex gap-2">
+        <button onclick="closeRepaymentModal()"
+            class="w-1/2 bg-gray-200 py-3 rounded-xl">
+            Cancel
+        </button>
+
+        <button onclick="submitRepayment()"
+            class="w-1/2 bg-green-500 text-white py-3 rounded-xl">
+            Save
+        </button>
+    </div>
+
+</div>
+
+</div>
+
+<form id="repayForm" method="POST"
+      action="{% url 'loans:add_repayment' loan.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="amount" id="repayAmountInput">
+    <input type="hidden" name="paid_date" id="repayDateInput">
+</form>
+
+<!-- ❌ Delete Modal -->
+
+<div id="deleteModal"
+     class="fixed inset-0 bg-black bg-opacity-40 hidden items-end justify-center z-50">
+
+
+<div class="bg-white w-full max-w-sm rounded-t-2xl p-5 space-y-4">
+
+    <div class="text-center">
+        <div class="text-3xl">⚠️</div>
+        <h2 class="text-lg font-semibold text-red-500 mt-2">
+            Delete Loan
+        </h2>
+    </div>
+
+    <p class="text-sm text-gray-500 text-center">
+        This action cannot be undone.
+    </p>
+
+    <div class="flex gap-2">
+        <button onclick="closeDeleteModal()"
+            class="w-1/2 bg-gray-200 py-3 rounded-xl">
+            Cancel
+        </button>
+
+        <button onclick="submitDelete()"
+            class="w-1/2 bg-red-500 text-white py-3 rounded-xl">
+            Delete
+        </button>
+    </div>
+
+</div>
+
+</div>
+
+<form id="deleteForm" method="POST"
+      action="{% url 'loans:delete' loan.id %}">
+    {% csrf_token %}
+</form>
+
+<!-- ⚡ JS -->
+
+<script>
+
+function openRepaymentModal() {
+    document.getElementById("repaymentModal").classList.remove("hidden");
+    document.getElementById("repaymentModal").classList.add("flex");
+}
+
+function closeRepaymentModal() {
+    document.getElementById("repaymentModal").classList.add("hidden");
+}
+
+function submitRepayment() {
+    const amount = document.getElementById("repayAmount").value;
+    const date = document.getElementById("repayDate").value;
+
+    if (!amount || !date) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    document.getElementById("repayAmountInput").value = amount;
+    document.getElementById("repayDateInput").value = date;
+
+    document.getElementById("repayForm").submit();
+}
+
+function openDeleteModal() {
+    document.getElementById("deleteModal").classList.remove("hidden");
+    document.getElementById("deleteModal").classList.add("flex");
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").classList.add("hidden");
+}
+
+function submitDelete() {
+    document.getElementById("deleteForm").submit();
+}
+
+// Auto date
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("repayDate").valueAsDate = new Date();
+});
+
+</script>
+
+{% endblock %}
