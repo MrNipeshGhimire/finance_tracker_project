@@ -103,10 +103,13 @@ WSGI_APPLICATION = "finance_tracker.wsgi.application"
 # }
 
 
+import dj_database_url
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600
+    "default": dj_database_url.parse(
+        "postgresql://finance_tracker_db_api6_user:wJoWwJFgks2YoLOKvFxxUkPPI7I96mhN@dpg-d7gvt4pkh4rs73afohl0-a/finance_tracker_db_api6",
+        conn_max_age=600,
+        ssl_require=True
     )
 }
 
